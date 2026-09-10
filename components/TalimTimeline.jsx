@@ -1,19 +1,25 @@
 'use client';
 
-import React from 'react';
-
+// Bosqichlar rasmiy tizimga mos: PQ-4805 (sinflar), PQ-4666 (texnikumlar),
+// bakalavriat 5–6 yil (davolash ishi 6, stomatologiya 5), klinik ordinatura
+// (rezidentura), tayanch doktorantura/doktorantura — 3 yildan (OAK).
 const BOSQICHLAR = [
-  { id: 'chuqurlashtirilgan_sinf', label: 'Chuqurlashtirilgan sinf', icon: '🏫', desc: 'Biologiya va kimyo ixtisosligi' },
-  { id: 'texnikum', label: 'Texnikum', icon: '📚', desc: 'Abu Ali ibn Sino jamoat salomatligi' },
-  { id: 'bakalavr', label: 'Bakalavriat', icon: '🎓', desc: 'Oliy tibbiy ta‘lim (7 ta yo‘nalish)' },
-  { id: 'magistr', label: 'Magistratura', icon: '🔬', desc: 'Mutaxassislik (26 ta shifr)' },
-  { id: 'rezidentura', label: 'Rezidentura / Ordinatura', icon: '🏥', desc: 'Klinik amaliyot' },
-  { id: 'doktor', label: 'Doktor (Shifokorlik)', icon: '🩺', desc: 'Amaliyotchi shifokor / UKTT va TFX litsenziya' },
-  { id: 'doktarantura', label: 'Doktarantura (PhD / DSc)', icon: '💡', desc: 'OAK ilmiy ixtisosliklari' },
+  { id: 'chuqurlashtirilgan_sinf', label: 'Chuqurlashtirilgan sinf', icon: '🏫', desc: 'Kimyo-biologiya ixtisosligi (PQ-4805)' },
+  { id: 'texnikum', label: 'Texnikum', icon: '📚', desc: 'Abu Ali ibn Sino texnikumlari (74 ta davlat)' },
+  { id: 'bakalavr', label: 'Bakalavriat', icon: '🎓', desc: 'Oliy tibbiy ta‘lim — 5–6 yil' },
+  { id: 'magistr', label: 'Magistratura', icon: '🔬', desc: 'Mutaxassislik bo‘yicha tayyorgarlik' },
+  { id: 'rezidentura', label: 'Klinik ordinatura', icon: '🏥', desc: 'Rezidentura — mutaxassislik tayyorgarligi' },
+  { id: 'doktor', label: 'Doktor (Shifokorlik)', icon: '🩺', desc: 'Amaliyotchi shifokor / UKTT va malaka toifasi' },
+  { id: 'doktorantura', label: 'Doktorantura (PhD / DSc)', icon: '💡', desc: 'Tayanch doktorantura — 3 yil (OAK)' },
 ];
 
-export default function TalimTimeline({ hozirgiBosqich = 'bakalavr' }) {
+// tamomlangan — ixtiyoriy: ta'lim tarixidagi holati==='tamomlagan' yozuvlarning bosqich id'lari (Set yoki massiv).
+// Berilsa «Tamomlangan» faqat shu yozuvi bor bosqichlarga qo'yiladi, joriydan oldingi yozuvsiz bosqichlar
+// neytral «Oldingi bosqich» bo'ladi (indeks bo'yicha taxmin qilinmaydi). Berilmasa eski indeks mantiqi ishlaydi.
+export default function TalimTimeline({ hozirgiBosqich = 'bakalavr', tamomlangan }) {
   const currentIndex = BOSQICHLAR.findIndex((b) => b.id === hozirgiBosqich);
+  const yozuvlarBor = tamomlangan !== undefined && tamomlangan !== null;
+  const tamomSet = yozuvlarBor ? new Set(Array.isArray(tamomlangan) ? tamomlangan : [...tamomlangan]) : null;
 
   return (
     <div className="card" style={{ marginBottom: 24 }}>
@@ -26,9 +32,11 @@ export default function TalimTimeline({ hozirgiBosqich = 'bakalavr' }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: '12px' }}>
         {BOSQICHLAR.map((b, idx) => {
-          const isCompleted = currentIndex > idx;
           const isCurrent = currentIndex === idx;
-          const isUpcoming = currentIndex < idx;
+          const isBefore = currentIndex > idx;
+          // Yozuvlar berilgan bo'lsa — faqat haqiqiy diplom/yozuv bor bosqich tamomlangan
+          const isCompleted = tamomSet ? tamomSet.has(b.id) : isBefore;
+          const isOldingi = isBefore && !isCompleted;
 
           let badgeBg = 'var(--bg, #f1f5f9)';
           let badgeColor = 'var(--muted, #64748b)';
@@ -93,7 +101,7 @@ export default function TalimTimeline({ hozirgiBosqich = 'bakalavr' }) {
                   color: badgeColor,
                 }}
               >
-                {isCompleted ? '✓ Tamomlangan' : isCurrent ? '● Joriy bosqich' : '○ Keyingi qadam'}
+                {isCompleted ? '✓ Tamomlangan' : isCurrent ? '● Joriy bosqich' : isOldingi ? '○ Oldingi bosqich' : '○ Keyingi qadam'}
               </div>
             </div>
           );

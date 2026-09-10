@@ -1,0 +1,176 @@
+-- =========================================================
+-- UTTP Platform — Texnikumlar muassasa kesimida (2026)
+-- Manba: docs/Texnikumlar_viloyatlar_kesimida_2026 (1).xlsx — 125 muassasa
+-- (74 davlat + 51 xususiy). Qatorlar yig'indisi texnikum_hudud_stat
+-- agregatlariga aynan mos keladi.
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS public.texnikum_muassasa (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    hudud TEXT NOT NULL,                        -- texnikum_hudud_stat.hudud bilan bir xil yoziladi
+    nomi TEXT NOT NULL UNIQUE,
+    qisqa_nomi TEXT,
+    turi TEXT NOT NULL CHECK (turi IN ('Davlat', 'Xususiy')),
+    tuman TEXT,
+    tashkil_yili INTEGER,
+    oquvchilar INTEGER NOT NULL DEFAULT 0,
+    ayollar INTEGER NOT NULL DEFAULT 0,
+    davlat_granti INTEGER NOT NULL DEFAULT 0,
+    kontrakt INTEGER NOT NULL DEFAULT 0,
+    bitiruvchi INTEGER NOT NULL DEFAULT 0,
+    qabul_kvota INTEGER NOT NULL DEFAULT 0,
+    pedagoglar INTEGER NOT NULL DEFAULT 0,
+    vakant NUMERIC(6,1) NOT NULL DEFAULT 0,     -- shtat birligi kasrli bo'lishi mumkin (3,5)
+    kompyuterlar INTEGER NOT NULL DEFAULT 0,
+    laboratoriyalar INTEGER NOT NULL DEFAULT 0,
+    simulyatsion INTEGER NOT NULL DEFAULT 0,
+    amaliy_baza INTEGER NOT NULL DEFAULT 0,
+    anketa BOOLEAN NOT NULL DEFAULT FALSE,      -- kontingent bo'limi to'ldirilganmi
+    yil INTEGER NOT NULL DEFAULT 2026,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS texnikum_muassasa_hudud_idx ON public.texnikum_muassasa (hudud);
+
+ALTER TABLE public.texnikum_muassasa ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow authenticated to read texnikum muassasa"
+    ON public.texnikum_muassasa FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "Admin manage texnikum muassasa"
+    ON public.texnikum_muassasa FOR ALL TO authenticated
+    USING (public.get_current_user_role() = 'admin')
+    WITH CHECK (public.get_current_user_role() = 'admin');
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.texnikum_muassasa TO authenticated;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+
+INSERT INTO public.texnikum_muassasa
+    (hudud, nomi, qisqa_nomi, turi, tuman, tashkil_yili, oquvchilar, ayollar, davlat_granti, kontrakt, bitiruvchi, qabul_kvota, pedagoglar, vakant, kompyuterlar, laboratoriyalar, simulyatsion, amaliy_baza, anketa)
+VALUES
+    ('Andijon', 'Andijon Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Andijon JST', 'Davlat', 'Andijon shahar', 2020, 1971, 1768, 154, 1817, 1297, 2010, 178, 3.5, 170, 3, 1, 1, true),
+    ('Andijon', 'Qo''rg''ontepa Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Andijon', 'Paxtaobod Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Andijon', 'Bo''ston Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Andijon', 'Asaka Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi (Asaka tibbiyot kolleji)', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Andijon', 'Xo''jaobod Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Xo''jaobod JST', 'Davlat', 'Xo''jaobod tumani', 1987, 1026, 993, 157, 869, 192, 420, 53, 8, 70, 2, 14, 15, true),
+    ('Andijon', 'Baliqchi Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Andijon', 'Andijan It-Med Texnikumi', NULL, 'Xususiy', 'Andijon sh', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Andijon', 'Aylim', NULL, 'Xususiy', 'Andijon sh', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Buxoro', 'Buxoro Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Buxoro', 'Afshona Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Buxoro', 'Qorako''l Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Qorako''l JST', 'Davlat', 'Qorako''l tumani', 2004, 700, 658, 132, 568, 232, 510, 37, 0, 68, 0, 1, 1, true),
+    ('Buxoro', 'G''ijduvon Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Buxoro', 'Bukhara Avicenna Texnikumi', NULL, 'Xususiy', 'Buxro shahri, Kogon t.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Buxoro', 'Buxoro Innovatsion Tibbiyot Texnikumi', NULL, 'Xususiy', 'Buxoro shahri, G''ijduvon', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Buxoro', 'Buxoro Xalqaro Tibbiyot Texnikumi', NULL, 'Xususiy', 'Buxoro sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Buxoro', 'Med Invest Innovatsion Tibbiyot Texnikumi', NULL, 'Xususiy', 'Buxoro sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Buxoro', 'Sharq Tibbiyot Texnikumi', NULL, 'Xususiy', 'Buxoro t', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Buxoro', 'Turkiston Tibbiyot Texnikumi', NULL, 'Xususiy', 'Buxoro sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Jizzax', 'Jizzax Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Jizzax JST', 'Davlat', 'Jizzax shahar', 1966, 1557, 1488, 220, 1337, 445, 840, 154, 0, 80, 2, 12, 24, true),
+    ('Jizzax', 'Do''stlik Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Jizzax', 'Zomin Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Jizzax', 'G''allaorol Abu Ali ibn Sino nomidagi jamoat salomatligi texnikumi', 'G''allaorol JST', 'Davlat', 'G''allaorol tumani', 1988, 764, 731, 167, 597, 27, 360, 45, 0, 36, 14, 1, 12, true),
+    ('Jizzax', 'KO''P TARMOQLI TIBBIYOT TEXNIKUMI MAS''ULIYATI CHEKLANGAN JAMIYAT', 'KTT MChJ', 'Xususiy', 'Sharof Rashidov tumani', 2023, 1307, 1283, 0, 1307, 509, 682, 100, 0, 80, 0, 2, 15, true),
+    ('Qashqadaryo', 'Qarshi Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Qarshi JST', 'Davlat', 'Qarshi shahri', 1982, 1424, 1320, 200, 1224, 305, 555, 69, 1, 98, 2, 7, 0, true),
+    ('Qashqadaryo', 'Muborak Abu Ali ibn Sino nomidagi jamoat salomatligi texnikumi', 'Muborak JST', 'Davlat', 'Muborak tumani', 1991, 835, 765, 189, 646, 145, 360, 32, 0, 75, 0, 8, 14, true),
+    ('Qashqadaryo', 'Shahrisabz Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Shahrisabz JST', 'Davlat', 'Shahrisabz shahar', 1966, 1158, 1119, 120, 1028, 243, 1024, 46, 3, 119, 10, 5, 3, true),
+    ('Qashqadaryo', 'Dehqonobod Abu Ali ibn Sino nomidagi jamoat salomatligi texnikumi', 'Dehqonobod JST', 'Davlat', 'Dehqonobod tumani', 2009, 646, 551, 143, 503, 0, 360, 55, 0, 89, 0, 16, 4, true),
+    ('Qashqadaryo', 'Beruniy Nomidagi Tibbiyot Texnikumi', NULL, 'Xususiy', 'Qarshi sh', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Qashqadaryo', 'Ilm-U Ziyo Biznes--Tibbiyot Texnikumi', NULL, 'Xususiy', 'Qarshi sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Qashqadaryo', 'Koson Tibbiyot Texnikumi', NULL, 'Xususiy', 'Koson', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Qashqadaryo', 'Qarshi Salomatlik Texnikumi', NULL, 'Xususiy', 'Qarshi sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Qashqadaryo', 'Qarshi Tibbiyot Texnikumi', NULL, 'Xususiy', 'Qarshi shahri, Koson t,', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Qashqadaryo', 'Shaxrisabz Xalqaro Tibbiyot Texnikumi', NULL, 'Xususiy', 'Shahrisabz', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Qashqadaryo', 'Tabobat Ilmi Tibbiyot Texnikumi', NULL, 'Xususiy', 'Qarshi sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Qashqadaryo', 'Xalqaro Innovatsion Tibbiyot Texnikumi', NULL, 'Xususiy', 'Qarshi sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Navoiy', 'Navoiy Abu Ali ibn Sino nomidagi jamoat salomatligi texnikumi', 'Navoiy JST', 'Davlat', 'Navoiy shahar', 1982, 1248, 1210, 169, 1079, 317, 659, 98, 0, 64, 6, 10, 32, true),
+    ('Navoiy', 'Xatirchi Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Xatirchi JST', 'Davlat', 'Xatirchi tumani', 2020, 607, 596, 125, 482, 229, 690, 44, 0, 36, 1, 13, 5, true),
+    ('Navoiy', 'Zarafshon Abu Ali ibn Sino nomidagi jamoat salomatligi texnikumi', 'Zarafshon tibbiyot texnikumi', 'Davlat', 'Zarafshon shahar', 1993, 510, 498, 141, 369, 0, 360, 39, 1, 44, 1, 4, 1, true),
+    ('Navoiy', 'Navoiy Med Invest Tibbiyot Texnikumi', NULL, 'Xususiy', 'Navoiy sh', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Namangan', 'Kasbiy ta`lim agentligi huzuridagi 1-son Namangan Abu Ali ibn Sino nomidagi jamoat salomatligi texnikumi', '1-son Namangan JST', 'Davlat', 'Namangan shahar', 1938, 1203, 1102, 255, 948, 261, 660, 96, 0, 73, 3, 6, 21, true),
+    ('Namangan', 'Kosonsoy Abu Ali ibn Sino nomidagi jamoat salomatligi texnikumi', 'Kosonsoy JST', 'Davlat', 'Kosonsoy tumani', 1986, 817, 730, 256, 561, 179, 660, 37, 0, 50, 2, 6, 30, true),
+    ('Namangan', 'Chortoq Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Chortoq JST', 'Davlat', 'Chortoq tumani', 1984, 910, 838, 309, 601, 167, 540, 62, 0, 35, 3, 6, 0, true),
+    ('Namangan', 'Norin Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Norin JST', 'Davlat', 'Norin tumani', 2006, 732, 707, 148, 403, 199, 405, 48, 1.5, 30, 4, 5, 4, true),
+    ('Namangan', '2-son Namangan Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', '2-son Namangan JST', 'Davlat', 'Yangi Namangan tumani', NULL, 1001, 930, 297, 704, 226, 690, 108, 0, 68, 0, 2, 42, true),
+    ('Namangan', 'Pop Abu Ali ibn Sino nomidagi jamoat salomatligi texnikumi', 'Pop JST', 'Davlat', 'Pop tumani', 2007, 806, 767, 166, 538, 0, 450, 48, 0, 42, 0, 11, 4, true),
+    ('Namangan', 'Chust Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Chust JST', 'Davlat', 'Chust tumani', 1984, 901, 872, 361, 540, 0, 660, 60, 2, 61, 0, 1, 12, true),
+    ('Namangan', 'Namangan innovatsion tibbiyot texnikumi', 'NITT', 'Xususiy', 'Namangan shahar', 2024, 1120, 1061, 0, 1120, 0, 1344, 0, 0, 30, 0, 0, 0, true),
+    ('Namangan', 'Turan MED xalqaro tibbiyot texnikumi', 'Turan MED', 'Xususiy', 'Namangan shahar', 2024, 586, 536, 0, 586, 0, 870, 54, 0, 46, 4, 4, 10, true),
+    ('Namangan', 'Namangan Xalqaro Tibbiyot Texnikumi', NULL, 'Xususiy', 'Namangan', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Samarqand', 'Samarqand Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Samarqand', 'Siyob Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Samarqand', 'Kattaqo''rg''on Abu Ali ibn Sino nomidagi jamoat salomatligi texnikumi', 'Kattaqo''rg''on JST', 'Davlat', 'Kattaqo''rg''on tumani', 1966, 1139, 1000, 214, 925, 400, 570, 67, 1, 104, 8, 17, 0, true),
+    ('Samarqand', 'Ishtixon Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Samarqand', 'Pastdarg''om Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Samarqand', 'Paxtachi Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Samarqand', 'Urgut Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Samarqand', 'Payariq Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Samarqand', 'So''zangaron Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Samarqand', 'Samarqand Viloyati Tibbiyot Texnikumi', NULL, 'Xususiy', 'Samarqand sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Samarqand', 'Tibbiyot Texnikumi Ochiloff', NULL, 'Xususiy', 'Samarqand sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Samarqand', 'Turon Med-Class', NULL, 'Xususiy', 'Samarqand sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Surxondaryo', 'Termiz Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Surxondaryo', 'Denov Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Denov JST', 'Davlat', 'Denov tumani', 2020, 1064, 1014, 181, 883, 206, 1086, 44, 2, 114, 8, 3, 15, true),
+    ('Surxondaryo', 'Sariosiyo Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Surxondaryo', 'Sherobod Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Surxondaryo', 'Kasbiy ta''lim agentligi huzuridagi Sho''rchi Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Sho''rchi JST', 'Davlat', 'Sho''rchi tumani', 2023, 798, 748, 202, 596, 0, 540, 25, 3, 51, 42, 3, 13, true),
+    ('Surxondaryo', 'Denov Ziyo Medical Texnikumi', NULL, 'Xususiy', 'Denov', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Surxondaryo', 'Med Innovatsion It Texnikumi', NULL, 'Xususiy', 'Termiz sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Surxondaryo', 'Medstart Tibbiyot Texnikumi', NULL, 'Xususiy', 'Sho''rchi t', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Surxondaryo', 'Surxandaryo Viloyati Tibbiyot Texnikumi', NULL, 'Xususiy', 'Termiz sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Sirdaryo', 'Sirdaryo Abu Ali ibn Sino nomidagi jamoat salomatligi texnikumi', 'Sirdaryo JST', 'Davlat', 'Sirdaryo tumani', 2008, 451, 437, 141, 310, 180, 450, 46, 4, 78, 2, 2, 4, true),
+    ('Sirdaryo', 'Guliston Abu Ali ibn Sino nomidagi jamoat salomatligi texnikumi', 'Guliston JST', 'Davlat', 'Guliston shahar', 1964, 812, 774, 187, 625, 31, 450, 52, 2, 58, 37, 5, 26, true),
+    ('Sirdaryo', 'Yangiyer Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Yangiyer JST', 'Davlat', 'Yangiyer shahar', 2004, 686, 654, 173, 513, 167, 360, 42, 1, 78, 2, 9, 12, true),
+    ('Sirdaryo', 'Guliston Tibbiyot Va It Texnikumi', NULL, 'Xususiy', 'Guliston sh', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Sirdaryo', 'It Med Xalqaro Talim Klasteri', NULL, 'Xususiy', 'Guliston shahri, Boyovut t.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent sh.', '1- Respublika Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent sh.', 'Chilonzor Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent sh.', 'Yunusobod Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent sh.', '2-son Respublika Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', '2-son RJST', 'Davlat', 'Toshkent shahar', 1918, 1446, 1349, 248, 1198, 38, 1050, 79, 8, 80, 20, 0, 15, true),
+    ('Toshkent sh.', 'Sergeli Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent sh.', 'Toshkent Kasb-Hunar Va Tibbiyot Texnikumi', NULL, 'Xususiy', 'Chilonzor, Sergeli', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent sh.', 'Alpha Professional Ta’Lim', NULL, 'Xususiy', 'Chilonzor', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent sh.', 'Alpha Tibbiyot Texnikumi', NULL, 'Xususiy', 'Yunusobod', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent sh.', 'Avitsenna Tibbiyot Texnikum', NULL, 'Xususiy', 'Chilonzor, Olmazor', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent sh.', 'Collegeofemu', NULL, 'Xususiy', 'Yakkasaroy', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent sh.', 'Muhandislik Va Texnologiyalar Oliy Maktabi', NULL, 'Xususiy', 'Yakkasaroy', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent sh.', 'Registon Texnikumi', NULL, 'Xususiy', 'Olmazor', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent sh.', 'Topex Texnikum', NULL, 'Xususiy', 'Sergeli', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent sh.', 'Toshkent Stomatologiya Va Tibbiyot Texnikumi', NULL, 'Xususiy', 'Yunusobod', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent sh.', 'Wise Medical Texnikumi', NULL, 'Xususiy', 'Sergeli', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent vil.', 'Bekobod Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent vil.', 'Zangiota Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent vil.', 'Olmaliq Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Olmaliq JST', 'Davlat', 'Olmaliq', 2020, 480, 458, 96, 384, 269, 420, 39, 9.5, 86, 54, 2, 4, true),
+    ('Toshkent vil.', 'Yangiyo''l Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Yangiyo''l JST', 'Davlat', 'Yangiyo''l shahar', 2020, 802, 768, 176, 626, 219, 0, 23, 3, 45, 0, 6, 2, true),
+    ('Toshkent vil.', 'Chirchiq Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent vil.', 'Angren Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent vil.', 'Chirchiq-Innovatsion-Tibbiyot Va Salomatlik-Texnikumi', NULL, 'Xususiy', 'Chirchiq sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent vil.', 'Toshkent Viloyati Innovatsion-Tibbiyot Texnikumi', NULL, 'Xususiy', 'Bekobod sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Toshkent vil.', 'Toshkent Xalqaro Tibbiyot Texnikumi', NULL, 'Xususiy', 'Chirchiq sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Farg''ona', 'Marg''ilon Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Farg''ona', '2-son Marg''ilon Abu Ali ibn Sino nomidagi jamoat salomatligi texnikumi', '2-son Marg''ilon JST', 'Davlat', 'Marg''ilon shahar', 2006, 855, 817, 158, 697, 425, 990, 38, 2, 55, 1, 4, 3, true),
+    ('Farg''ona', 'Beshariq Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Farg''ona', 'Quva Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Farg''ona', 'Rishton Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Rishton JST', 'Davlat', 'Rishton tumani', 2007, 1085, 1015, 201, 884, 358, 1200, 68, 1, 60, 6, 4, 12, true),
+    ('Farg''ona', 'Buvayda Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Buvayda JST', 'Davlat', 'Buvayda tumani', 2008, 604, 577, 133, 471, 145, 360, 45, 0, 45, 5, 4, 8, true),
+    ('Farg''ona', '2-Farg''on Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'FJST', 'Davlat', 'Farg''ona shahar', 1983, 1451, 1279, 239, 1222, 30, 660, 88, 2, 57, 0, 1, 0, true),
+    ('Farg''ona', 'Farg''ona tumani Abu Ali ibn Sino nomidagi jamoat salomatligi texnikumi', 'Farg''ona tumani tibbiyot texnikumi', 'Davlat', 'Farg''ona tumani', 2009, 545, 528, 149, 396, 0, 510, 36, 0, 48, 1, 4, 5, true),
+    ('Farg''ona', 'Qo''qon Abu Ali ibn Sino nomidagi jamoat salomatligi texnikumi', 'Qo''qon JST', 'Davlat', 'Qo''qon shahar', 1925, 1905, 1668, 403, 1502, 27, 1020, 97, 0, 110, 4, 6, 216, true),
+    ('Farg''ona', 'Alfa Medical College', NULL, 'Xususiy', 'Oltiariq t', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Farg''ona', 'Avisena Medical Texnikum', NULL, 'Xususiy', 'Yozyovon', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Farg''ona', 'Registan Medical Texnikum', NULL, 'Xususiy', 'Farg''ona sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Farg''ona', 'Sino Tibbiyot Texnikumi', NULL, 'Xususiy', 'Farg''ona sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Xorazm', 'Urganch Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Xorazm', 'Xiva Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Xorazm', 'Khiva Medical Tekhnikum', NULL, 'Xususiy', 'Xiva', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Xorazm', 'Xorazm Med Invest Tabobat Texnikumi', NULL, 'Xususiy', 'Urganch', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Qoraqalpog''iston', 'Nukus Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Qoraqalpog''iston', 'Xo''jayli Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Qoraqalpog''iston', '2-son Nukus Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Qoraqalpog''iston', 'Qo''ng''irot Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Qo''ng''irot JST', 'Davlat', 'Qo''ng''irot tumani', 2007, 364, 345, 110, 208, 90, 353, 43, 1, 74, 1, 1, 7, true),
+    ('Qoraqalpog''iston', 'To''rtko''l Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', NULL, 'Davlat', NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Qoraqalpog''iston', 'Ellikqal''a Abu Ali ibn Sino nomidagi Jamoat salomatligi texnikumi', 'Ellikqal''a JST', 'Davlat', 'Ellikqal''a tumani', 2003, 620, 607, 146, 474, 55, 630, 45, 12, 82, 3, 10, 3, true),
+    ('Qoraqalpog''iston', 'Aralboyi Medicina Ham Transport Texnikumi', NULL, 'Xususiy', 'Nukus sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false),
+    ('Qoraqalpog''iston', 'Nukus Tibbiyot Va It Texnikumi', NULL, 'Xususiy', 'Nukus sh.', NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false)
+ON CONFLICT (nomi) DO NOTHING;

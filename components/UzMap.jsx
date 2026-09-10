@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Uzbekistan from '@svg-maps/uzbekistan';
 
 // @svg-maps/uzbekistan haqiqiy id'lari → bizning bazadagi region id'lar.
@@ -38,30 +38,39 @@ function regionInfo(loc) {
   return REGION_MAP[loc.id] || null;
 }
 
-export default function UzMap({ regionStats = {}, selectedRegion, onSelectRegion }) {
+export default function UzMap({
+  regionStats = {},
+  selectedRegion,
+  onSelectRegion,
+  title = 'Hududlar bo‘yicha taqsimot',
+  subtitle = 'Filtrlash uchun viloyat ustiga bosing',
+  birlik = 'nafar',
+}) {
   const [hovered, setHovered] = useState(null); // regionInfo.id saqlanadi
 
-  // Sekvensial turquoise rampa (dizayn tizimi: #d5edea → #0f6b62)
+  // Sekvensial turquoise rampa (dizayn tizimi: #d5edea → #0f6b62) — eng katta hududga nisbatan 4 pog'ona
+  const maks = useMemo(() => Math.max(0, ...Object.values(regionStats).map((v) => Number(v) || 0)), [regionStats]);
   const getColor = (count, isSelected) => {
     if (isSelected) return 'var(--primary, #06b6d4)';
-    if (!count || count === 0) return '#dfe4eb';
-    if (count > 500) return '#0f6b62';
-    if (count > 200) return '#2e9186';
-    if (count > 50) return '#5fb5aa';
+    if (!count || count === 0 || !maks) return '#dfe4eb';
+    const ulush = count / maks;
+    if (ulush > 0.6) return '#0f6b62';
+    if (ulush > 0.35) return '#2e9186';
+    if (ulush > 0.15) return '#5fb5aa';
     return '#9fd3cc';
   };
 
   return (
     <div className="card" style={{ position: 'relative' }}>
       <div className="card__head">
-        <h3>Hududlar bo‘yicha xodimlar taqsimoti</h3>
+        <h3>{title}</h3>
         <div className="card__head-right">
           {selectedRegion ? (
             <button className="btn btn--ghost" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => onSelectRegion(null)}>
               Filtrni bekor qilish ✕
             </button>
           ) : (
-            <span>Filtrlash uchun viloyat ustiga bosing</span>
+            <span>{subtitle}</span>
           )}
         </div>
       </div>
@@ -120,7 +129,7 @@ export default function UzMap({ regionStats = {}, selectedRegion, onSelectRegion
             zIndex: 10,
           }}
         >
-          <strong>{REGION_NOMLARI[hovered] || hovered}</strong>: {regionStats[hovered] || 0} nafar xodim
+          <strong>{REGION_NOMLARI[hovered] || hovered}</strong>: {(regionStats[hovered] || 0).toLocaleString('ru-RU')} {birlik}
         </div>
       )}
     </div>

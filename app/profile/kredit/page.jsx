@@ -1,20 +1,35 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { PageHead, Card, StatCard, Badge, Progress } from '../../../components/ui.jsx';
+import { useState, useEffect, useMemo } from 'react';
+import { PageHead, Card, StatCard, Badge, Progress, DataTable } from '../../../components/ui.jsx';
 import { joriyProfilniOl } from '../../../lib/auth';
 import { INITIAL_PROFILES, getKreditlar } from '../../../lib/data-service';
 
 const YILLIK_NORMA = 50;
 const BESH_YILLIK_NORMA = 250;
 
+// Sarlavhadagi rol nishonchasi: TDTU talabasi / chuqurlashtirilgan sinf o'quvchisi / shifokor
+const rolNomi = (p) =>
+  p?.rol === 'talaba' ? 'Talaba' : p?.hozirgi_bosqich === 'chuqurlashtirilgan_sinf' ? 'O‘quvchi' : 'Shifokor';
+
+// Kurslar tarixi — bitta jadval: kurs (qator sarlavhasi) · tashkilot · sertifikat (mono) · sana · ball (o'ngga)
+const USTUNLAR = [
+  { key: 'kurs_nomi', label: 'Kurs', rowHeader: true },
+  { key: 'tashkilot_nomi', label: 'Tashkilot' },
+  { key: 'sertifikat_raqami', label: 'Sertifikat', mono: true },
+  { key: 'topshirilgan_sana', label: 'Sana', numeric: true, mono: true },
+  { key: 'kredit_ball', label: 'Ball', numeric: true },
+];
+
 export default function KreditPage() {
+  const [profil, setProfil] = useState(null);
   const [kreditlar, setKreditlar] = useState([]);
   const [yuklanmoqda, setYuklanmoqda] = useState(true);
 
   useEffect(() => {
     (async () => {
       const p = (await joriyProfilniOl()) || INITIAL_PROFILES[0];
+      setProfil(p);
       setKreditlar(await getKreditlar(p.id));
       setYuklanmoqda(false);
     })();
@@ -25,27 +40,30 @@ export default function KreditPage() {
   const yillikBall = kreditlar
     .filter((c) => new Date(c.topshirilgan_sana).getFullYear() === joriyYil)
     .reduce((s, c) => s + (c.kredit_ball || 0), 0);
+  const yillikQolgan = Math.max(0, YILLIK_NORMA - yillikBall);
+  const tsiklFoiz = Math.min(100, Math.round((jamiBall / BESH_YILLIK_NORMA) * 100));
 
-  // Yillar kesimida guruhlash (yangi yillar birinchi)
-  const yillarBoyicha = kreditlar.reduce((acc, c) => {
-    const yil = new Date(c.topshirilgan_sana).getFullYear();
-    (acc[yil] = acc[yil] || []).push(c);
-    return acc;
-  }, {});
-  const yillar = Object.keys(yillarBoyicha).sort((a, b) => b - a);
+  // Yangi kurslar birinchi — yil kesimi Sana ustunida ko'rinadi
+  const qatorlar = useMemo(
+    () => [...kreditlar].sort((a, b) => String(b.topshirilgan_sana).localeCompare(String(a.topshirilgan_sana))),
+    [kreditlar]
+  );
 
   return (
     <>
       <PageHead
-        title="Kredit hisobi"
+        breadcrumb={[{ label: 'Kabinet', href: '/profile' }, { label: 'UKTT kreditlari' }]}
+        title="UKTT kreditlari"
+        badge={profil ? <Badge tone="neutral">{rolNomi(profil)}</Badge> : undefined}
         subtitle="UKTT kredit ballari — yillik (50) va 5 yillik (250) norma monitoringi"
       />
 
+      {/* Tile'lar pastdagi progress kartalarini takrorlamaydi: qolgan ball va tsikl foizi */}
       <div className="grid stat-grid" style={{ marginBottom: 18 }}>
-        <StatCard label={`${joriyYil}-yil krediti`} value={`${yillikBall} / ${YILLIK_NORMA}`} icon="credit" tone="primary" />
-        <StatCard label="5 yillik jami" value={`${jamiBall} / ${BESH_YILLIK_NORMA}`} icon="chart" tone="teal" />
-        <StatCard label="Kurslar soni" value={kreditlar.length} icon="book" tone="violet" />
-        <StatCard label="Sertifikatlar" value={kreditlar.filter((c) => c.sertifikat_raqami).length} icon="certificate" tone="success" />
+        <StatCard label="Yillik normaga qolgan" value={yuklanmoqda ? '…' : yillikQolgan} caption={`ball · ${joriyYil}-yil, norma ${YILLIK_NORMA}`} icon="credit" tone="primary" />
+        <StatCard label="5 yillik tsikl bajarilishi" value={yuklanmoqda ? '…' : `${tsiklFoiz}%`} caption={`${BESH_YILLIK_NORMA} ball talab etiladi`} icon="chart" tone="teal" />
+        <StatCard label="Kurslar soni" value={yuklanmoqda ? '…' : kreditlar.length} icon="book" tone="violet" />
+        <StatCard label="Sertifikatlar" value={yuklanmoqda ? '…' : kreditlar.filter((c) => c.sertifikat_raqami).length} icon="certificate" tone="success" />
       </div>
 
       <div className="grid cols-2" style={{ marginBottom: 18, alignItems: 'start' }}>
@@ -56,7 +74,7 @@ export default function KreditPage() {
           </div>
           <Progress value={yillikBall} max={YILLIK_NORMA} />
           <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 6 }}>
-            Qolgan: {Math.max(0, YILLIK_NORMA - yillikBall)} ball
+            Qolgan: {yillikQolgan} ball
           </div>
         </Card>
 
@@ -67,50 +85,23 @@ export default function KreditPage() {
           </div>
           <Progress value={jamiBall} max={BESH_YILLIK_NORMA} />
           <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 6 }}>
-            Litsenziyani yangilash uchun 5 yillik davrda {BESH_YILLIK_NORMA} ball talab etiladi
+            Malaka toifasi (TFX sertifikati)ni yangilash uchun 5 yillik davrda {BESH_YILLIK_NORMA} ball talab etiladi
           </div>
         </Card>
       </div>
 
-      <Card title="Kredit ballari tarixi" extra={`${kreditlar.length} ta kurs`}>
+      <Card title="Kredit ballari tarixi" extra={yuklanmoqda ? undefined : `${kreditlar.length} ta kurs`}>
         {yuklanmoqda ? (
           <div style={{ padding: 28, textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>Yuklanmoqda...</div>
-        ) : kreditlar.length === 0 ? (
-          <div style={{ padding: 28, textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>
-            Hozircha kredit yozuvlari yo‘q. Kurslar TIPME orqali topshirilganda ballar avtomatik qo‘shiladi.
-          </div>
         ) : (
-          yillar.map((yil) => {
-            const yilKreditlari = yillarBoyicha[yil];
-            const yilJami = yilKreditlari.reduce((s, c) => s + (c.kredit_ball || 0), 0);
-            return (
-              <div key={yil} style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                  <b style={{ fontSize: 14.5 }}>{yil}-yil</b>
-                  <Badge tone="info">{yilJami} ball</Badge>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                  {yilKreditlari.map((c) => (
-                    <div
-                      key={c.id}
-                      style={{
-                        border: '1px solid var(--line)', borderRadius: 12, padding: '11px 14px',
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12,
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontSize: 13.5, fontWeight: 600 }}>{c.kurs_nomi}</div>
-                        <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                          {c.tashkilot_nomi} · {c.sertifikat_raqami || 'sertifikatsiz'} · {c.topshirilgan_sana}
-                        </div>
-                      </div>
-                      <Badge tone="success">+{c.kredit_ball}</Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })
+          <DataTable
+            numbered
+            columns={USTUNLAR}
+            rows={qatorlar}
+            totals={kreditlar.length ? { kredit_ball: jamiBall } : undefined}
+            footnote="Manba: TIPME kurs reyestri — ballar kurs topshirilganda avtomatik qo‘shiladi."
+            empty="Hozircha kredit yozuvlari yo‘q. Kurslar TIPME orqali topshirilganda ballar avtomatik qo‘shiladi."
+          />
         )}
       </Card>
     </>

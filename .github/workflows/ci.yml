@@ -1,0 +1,47 @@
+# ETTP (uttp-next) — CI: lint + build.
+# Build jonli Supabase'ga muhtoj emas: barcha ma'lumot so'rovlari klient tomonda ('use client', useEffect)
+# bajariladi, shuning uchun placeholder URL/kalit yetarli; NEXT_PUBLIC_DEMO_MODE=1 proxy.js ni
+# production'da «sozlanmagan» xatosidan saqlaydi.
+#
+# Playwright e2e testlari (npm run test:e2e) hozircha faqat lokal ishga tushiriladi —
+# ular lokal Supabase stack (supabase start + seed) va ishlab turgan dev serverga tayanadi;
+# CI'da Supabase konteynerlarini ko'tarish keyingi bosqichda qo'shiladi.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-build:
+    name: Lint + Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-key-000000000000000
+      NEXT_PUBLIC_DEMO_MODE: '1'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Kodni olish
+        uses: actions/checkout@v4
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Bog'liqliklarni o'rnatish
+        run: npm ci
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Build (next build)
+        run: npm run build

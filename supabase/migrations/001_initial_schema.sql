@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS public.specializations (
     id SERIAL PRIMARY KEY,
     kodi VARCHAR(20) NOT NULL UNIQUE,
     nomi TEXT NOT NULL,
-    bosqich TEXT NOT NULL, -- 'texnikum', 'bakalavriat', 'magistratura', 'ordinatura', 'doktarantura'
+    bosqich TEXT NOT NULL, -- 'texnikum', 'bakalavriat', 'magistratura', 'ordinatura', 'doktorantura'
     turi TEXT, -- 'terapevtik', 'jarrohlik', 'fundamental', 'stomatologiya', va h.k.
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     foto_url TEXT,
     
     -- Joriy ta'lim va ish holati
-    hozirgi_bosqich TEXT CHECK (hozirgi_bosqich IN ('chuqurlashtirilgan_sinf', 'texnikum', 'bakalavr', 'magistr', 'rezidentura', 'doktor', 'doktarantura')),
+    hozirgi_bosqich TEXT CHECK (hozirgi_bosqich IN ('chuqurlashtirilgan_sinf', 'texnikum', 'bakalavr', 'magistr', 'rezidentura', 'doktor', 'doktorantura')),
     hozirgi_muassasa TEXT, -- Masalan: Toshkent davlat tibbiyot universiteti
     hozirgi_kurs INT DEFAULT 1,
     yonalish_kodi VARCHAR(20) REFERENCES public.specializations(kodi) ON DELETE SET NULL,
@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 CREATE TABLE IF NOT EXISTS public.education_history (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     profile_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-    bosqich TEXT NOT NULL, -- 'chuqurlashtirilgan_sinf', 'texnikum', 'bakalavr', 'magistr', 'rezidentura', 'doktarantura'
+    bosqich TEXT NOT NULL, -- 'chuqurlashtirilgan_sinf', 'texnikum', 'bakalavr', 'magistr', 'rezidentura', 'doktorantura'
     muassasa_nomi TEXT NOT NULL,
     yonalish_nomi TEXT,
     boshlangan_yil INT NOT NULL,

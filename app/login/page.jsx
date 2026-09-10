@@ -1,27 +1,20 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { INITIAL_PROFILES } from '../../lib/data-service';
 import { tizimgaKirish, supabaseSozlanganmi, rolBoshSahifasi } from '../../lib/auth';
+import { RASMIY_RAQAMLAR } from '../../lib/rasmiy-raqamlar';
 
-// my.tipme.uz/user/login asosidagi kirish ekrani — uttp-platform TipmeLogin.jsx
-// dizayni (tipme-login.css), autentifikatsiya esa Supabase (lokal stack) orqali.
+// Kirish ekrani — my.tipme.uz/user/login joylashuvi (chap brend paneli + o'ng karta),
+// uslub tipme-login.css (gov navy + glass qatlami). Autentifikatsiya Supabase (lokal stack) orqali;
 // Supabase ulanmagan bo'lsa localStorage demo-rejimga tushadi.
+// 2026-09-08 sayqal: soxta raqamlar → rasmiy raqamlar, avatar halqasi va ikonkali yorliqlar olib tashlandi,
+// demo kirish bitta ro'yxat-blokka yig'ildi, pastda yordam/© qatori.
 
-// Seed'dagi demo hisoblar (parol konvensiyasi: <ism>2026)
-const DEMO_PAROLLAR = {
-  'vazirlik@ssv.uz': 'vazirlik2026',
-  'admin@ssv.uz': 'admin2026',
-  'jamshid.r@ssv.uz': 'jamshid2026',
-  'shahlo.k@ssv.uz': 'shahlo2026',
-};
+import { DEMO_ROLLAR, DEMO_XODIMLAR, DEMO_TALABALAR, DEMO_PAROLLAR } from '../../lib/demo-hisoblar';
 
-const DEMO_ROLLAR = [
-  { email: 'vazirlik@ssv.uz', nom: 'Vazirlik / Tahlil paneli', tavsif: 'Umumiy monitoring va statistika', ikon: 'fa-landmark' },
-  { email: 'admin@ssv.uz', nom: 'Super admin / Boshqaruv', tavsif: 'CRUD va klassifikatorlar', ikon: 'fa-user-shield' },
-  { email: 'jamshid.r@ssv.uz', nom: 'Tibbiyot xodimi / Kabinet', tavsif: 'Shifokor profili, UKTT va TFX', ikon: 'fa-user-doctor' },
-];
+const fmt = (n) => (n ?? 0).toLocaleString('ru-RU');
 
 export default function LoginPage() {
   const router = useRouter();
@@ -54,7 +47,17 @@ export default function LoginPage() {
         setAuthError('Login yoki parol noto‘g‘ri. Qaytadan urinib ko‘ring.');
         return false;
       }
-      const demoUser = INITIAL_PROFILES.find((p) => p.email === email);
+      const demoUser =
+        INITIAL_PROFILES.find((p) => p.email === email) ||
+        (() => {
+          // Bosqich demo-xodimlari INITIAL ro'yxatida yo'q — yengil profil quramiz
+          const x = DEMO_XODIMLAR.find((d) => d.email === email);
+          if (x) return { id: x.email, fish: x.ism, email: x.email, rol: 'xodim', hozirgi_bosqich: x.bosqichId, lavozimi: x.bosqich };
+          const t = DEMO_TALABALAR.find((d) => d.email === email);
+          return t
+            ? { id: t.email, fish: t.ism, email: t.email, rol: 'talaba', hozirgi_bosqich: t.bosqichId, hozirgi_kurs: t.kurs, hozirgi_muassasa: 'Toshkent davlat tibbiyot universiteti', lavozimi: t.bosqich }
+            : null;
+        })();
       if (demoUser) {
         localStorage.setItem('uttp_current_user', JSON.stringify(demoUser));
         kirishniYakunla(demoUser);
@@ -82,7 +85,7 @@ export default function LoginPage() {
     kir(login.trim().toLowerCase(), password);
   };
 
-  // Rol-kartasi orqali tez kirish (SSO taqlidi — seed paroli bilan)
+  // Rol-qatori orqali tez kirish (SSO taqlidi — seed paroli bilan)
   const demoKir = (email) => kir(email, DEMO_PAROLLAR[email] || '');
 
   return (
@@ -95,42 +98,47 @@ export default function LoginPage() {
 
           <div className="left-inner">
             <a href="#" className="brand-row" aria-label="Bosh sahifa" onClick={(e) => e.preventDefault()}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- statik 50×50 logotip, next/image optimizatsiyasi shart emas */}
               <img src="/tipme/logo-minzdrav.png" alt="Logo" width="50" height="50" />
               <div className="brand-name">ELEKTRON TIBBIY<br />TA’LIM PLATFORMASI</div>
             </a>
 
-            <h1 className="hero-title">Tibbiyot xodimlarini<br />rivojlantirish platformasi</h1>
+            <h1 className="hero-title">Tibbiyot xodimlarini <br />rivojlantirish platformasi</h1>
             <p className="hero-desc">
               Malaka oshirish, qayta tayyorlash va elektron ta’lim xizmatlarining yagona raqamli tizimi.
             </p>
 
-            <div className="stats-row">
-              <div>
-                <div className="st-num">57</div>
-                <div className="st-lbl">Muassasalar</div>
+            {/* Rasmiy bosh raqamlar — dashboard bilan bir xil manbalar (lib/rasmiy-raqamlar.js) */}
+            <dl className="stats-row" aria-label="Platforma qamrovi">
+              <div className="st">
+                <dt className="st-lbl">O‘qiyotganlar</dt>
+                <dd className="st-num">{fmt(RASMIY_RAQAMLAR.oqiyotganlar)}</dd>
               </div>
-              <div className="stats-div" />
-              <div>
-                <div className="st-num">149K+</div>
-                <div className="st-lbl">Tinglovchilar</div>
+              <div className="st">
+                <dt className="st-lbl">Tibbiyot muassasalari</dt>
+                <dd className="st-num">{fmt(RASMIY_RAQAMLAR.tibbiyot_muassasalari)}</dd>
               </div>
-            </div>
+              <div className="st">
+                <dt className="st-lbl">Tibbiy jihozlar</dt>
+                <dd className="st-num">{fmt(RASMIY_RAQAMLAR.tibbiy_jihozlar)}</dd>
+              </div>
+            </dl>
+            <p className="stats-src">Texnikum anketasi, TDTU ro‘yxati va jihozlar yig‘masi, {RASMIY_RAQAMLAR.sana}.</p>
           </div>
         </div>
 
-        {/* ═══ O'NG — Login va demo rollar ═══ */}
+        {/* ═══ O'NG — Login va demo hisoblar ═══ */}
         <div className="auth-right">
           <div className="right-inner">
             <div className="login-card" role="main">
               <div className="card-head">
-                <div className="avatar-ring"><i className="fa fa-user-md" /></div>
                 <h2 className="card-title">Tizimga kirish</h2>
                 <p className="card-sub">Boshqaruv va tibbiyot xodimlari uchun</p>
               </div>
 
               <form className="form" onSubmit={submit} noValidate>
                 <div className="fg">
-                  <label className="fl" htmlFor="tm-login"><i className="fa fa-user" /> Foydalanuvchi nomi</label>
+                  <label className="fl" htmlFor="tm-login">Foydalanuvchi nomi</label>
                   <div className={`form__field-wrap${errors.login ? ' has-error' : ''}`}>
                     <input
                       id="tm-login"
@@ -142,63 +150,113 @@ export default function LoginPage() {
                       autoFocus
                       autoComplete="username"
                       aria-required="true"
+                      aria-invalid={Boolean(errors.login)}
+                      aria-describedby={errors.login ? 'tm-login-xato' : undefined}
                     />
-                    <div className="help-block">{errors.login}</div>
+                    <div className="help-block" id="tm-login-xato">{errors.login}</div>
                   </div>
                 </div>
 
                 <div className="fg">
-                  <label className="fl" htmlFor="tm-pw"><i className="fa fa-lock" /> Parol</label>
+                  <label className="fl" htmlFor="tm-pw">Parol</label>
                   <div className="pw-wrap">
                     <div className={`form__field-wrap${errors.password ? ' has-error' : ''}`}>
                       <input
                         id="tm-pw"
                         type={showPw ? 'text' : 'password'}
-                        className="fi"
+                        className="fi fi--pw"
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => { setPassword(e.target.value); setAuthError(''); }}
                         autoComplete="current-password"
                         aria-required="true"
+                        aria-invalid={Boolean(errors.password)}
+                        aria-describedby={errors.password ? 'tm-pw-xato' : undefined}
                       />
-                      <div className="help-block">{errors.password}</div>
+                      <div className="help-block" id="tm-pw-xato">{errors.password}</div>
                     </div>
                     <button
                       type="button"
                       className="eye-btn"
                       onClick={() => setShowPw((s) => !s)}
-                      aria-label="Parolni ko'rsatish / yashirish"
+                      aria-label={showPw ? 'Parolni yashirish' : 'Parolni ko‘rsatish'}
+                      aria-pressed={showPw}
                     >
-                      <i className={showPw ? 'fa fa-eye-slash' : 'fa fa-eye'} />
+                      <i className={showPw ? 'fa fa-eye-slash' : 'fa fa-eye'} aria-hidden="true" />
                     </button>
                   </div>
                 </div>
 
                 {authError && (
                   <div className="auth-error" role="alert">
-                    <i className="fa fa-circle-exclamation" /> {authError}
+                    <i className="fa fa-circle-exclamation" aria-hidden="true" /> {authError}
                   </div>
                 )}
 
                 <div className="f-actions">
                   <button type="submit" className="btn-login" disabled={loading}>
-                    <i className="fa fa-sign-in-alt" /> {loading ? 'Tekshirilmoqda...' : 'Kirish'}
+                    {loading ? 'Tekshirilmoqda…' : 'Kirish'}
                   </button>
                 </div>
-
-                <div className="divider"><span>yoki demo rollar</span></div>
-
-                {DEMO_ROLLAR.map((r) => (
-                  <button key={r.email} type="button" className="btn-oneid" onClick={() => demoKir(r.email)} disabled={loading}>
-                    <i className={`fa ${r.ikon}`} style={{ width: 18 }} />
-                    <span style={{ flex: 1, textAlign: 'left' }}>
-                      {r.nom}
-                      <span style={{ display: 'block', fontSize: 11, opacity: 0.7, fontWeight: 400 }}>{r.tavsif}</span>
-                    </span>
-                  </button>
-                ))}
               </form>
+
+              {/* Demo hisoblar — taqdimot uchun parolsiz tezkor kirish, bitta blok */}
+              <section className="demo" aria-labelledby="demo-sarlavha">
+                <div className="demo-head">
+                  <h3 className="demo-title" id="demo-sarlavha">Demo hisoblar</h3>
+                  <p className="demo-sub">Taqdimot uchun parolsiz kirish</p>
+                </div>
+                <div className="demo-list">
+                  {DEMO_ROLLAR.map((r) => (
+                    <button key={r.email} type="button" className="demo-row" onClick={() => demoKir(r.email)} disabled={loading}>
+                      <i className={`fa ${r.ikon} demo-ic`} aria-hidden="true" />
+                      <span className="demo-txt">
+                        <span className="demo-nom">{r.nom}</span>
+                        <span className="demo-tavsif">{r.tavsif}</span>
+                      </span>
+                      <span className="demo-arr" aria-hidden="true">›</span>
+                    </button>
+                  ))}
+
+                  {/* Ta'lim zanjiri demosi: har bosqichdan bittadan xodim/talaba — tanlanganda darhol kiradi */}
+                  <div className="demo-row demo-row--select">
+                    <i className="fa fa-user-doctor demo-ic" aria-hidden="true" />
+                    <span className="demo-txt">
+                      <label className="demo-nom" htmlFor="tm-xodim">Xodim yoki talaba</label>
+                      <span className="demo-tavsif">Bosqich bo‘yicha kirish</span>
+                    </span>
+                    <select
+                      id="tm-xodim"
+                      className="demo-select"
+                      defaultValue=""
+                      disabled={loading}
+                      onChange={(e) => e.target.value && demoKir(e.target.value)}
+                    >
+                      <option value="" disabled>Bosqichni tanlang</option>
+                      <optgroup label="Tibbiyot xodimlari (demo)">
+                        {DEMO_XODIMLAR.map((x) => (
+                          <option key={x.email} value={x.email}>
+                            {x.bosqich} — {x.ism}
+                          </option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="TDTU talabalari (real ro‘yxat, 03.09.2026)">
+                        {DEMO_TALABALAR.map((t) => (
+                          <option key={t.email} value={t.email}>
+                            {t.bosqich.split(' · ')[0]} — {t.ism}
+                          </option>
+                        ))}
+                      </optgroup>
+                    </select>
+                  </div>
+                </div>
+              </section>
             </div>
+
+            <p className="auth-foot">
+              <span>Yordam markazi: 1003</span>
+              <span>© 2026 Elektron tibbiy ta’lim platformasi</span>
+            </p>
           </div>
         </div>
       </div>

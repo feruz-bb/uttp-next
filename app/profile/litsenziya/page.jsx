@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { PageHead, Card, Badge, Progress, InfoBanner } from '../../../components/ui.jsx';
+import { useState, useEffect } from 'react';
+import { PageHead, Card, StatCard, Badge, Progress, InfoBanner, SummaryList } from '../../../components/ui.jsx';
 import { joriyProfilniOl } from '../../../lib/auth';
 import { INITIAL_PROFILES, getLitsenziyalar } from '../../../lib/data-service';
 
@@ -16,8 +16,14 @@ const HOLAT_MATN = {
   muddati_otgan: 'Muddati o‘tgan',
 };
 const TOIFA_NOMLARI = { oliy: 'Oliy toifa', birinchi: 'Birinchi toifa', ikkinchi: 'Ikkinchi toifa', mutaxassis: 'Mutaxassis' };
+// StatCard ikonka toni (StatCard'da danger yo'q — accent ishlatiladi)
+const TILE_TONE = { amal_qilmoqda: 'success', muddati_tugayapti: 'warning', muddati_otgan: 'accent' };
 
 const qolganKunlar = (muddat) => Math.ceil((new Date(muddat) - new Date()) / (1000 * 60 * 60 * 24));
+
+// Sarlavhadagi rol nishonchasi: TDTU talabasi / chuqurlashtirilgan sinf o'quvchisi / shifokor
+const rolNomi = (p) =>
+  p?.rol === 'talaba' ? 'Talaba' : p?.hozirgi_bosqich === 'chuqurlashtirilgan_sinf' ? 'O‘quvchi' : 'Shifokor';
 
 // 5 yillik tsiklning necha foizi o'tgani
 function tsiklFoizi(berilgan, muddat) {
@@ -28,36 +34,52 @@ function tsiklFoizi(berilgan, muddat) {
 }
 
 export default function LitsenziyaPage() {
+  const [profil, setProfil] = useState(null);
   const [litsenziyalar, setLitsenziyalar] = useState([]);
   const [yuklanmoqda, setYuklanmoqda] = useState(true);
 
   useEffect(() => {
     (async () => {
       const p = (await joriyProfilniOl()) || INITIAL_PROFILES[0];
+      setProfil(p);
       setLitsenziyalar(await getLitsenziyalar(p.id));
       setYuklanmoqda(false);
     })();
   }, []);
 
+  // Tile'lar uchun joriy (muddati o'tmagan, bo'lmasa oxirgi) sertifikat
+  const faol = litsenziyalar.find((l) => l.holati !== 'muddati_otgan') || litsenziyalar[0] || null;
+  const faolKunlar = faol ? qolganKunlar(faol.amal_qilish_muddati) : null;
+  const tile = (qiymat) => (yuklanmoqda ? '…' : qiymat ?? '—');
+
   return (
     <>
       <PageHead
-        title="TFX litsenziyasi"
-        subtitle="Malaka toifasi va litsenziyalar — 5 yillik tsikl monitoringi (tibtoifa.uz)"
+        breadcrumb={[{ label: 'Kabinet', href: '/profile' }, { label: 'Malaka toifasi' }]}
+        title="Malaka toifasi va attestatsiya"
+        badge={profil ? <Badge tone="neutral">{rolNomi(profil)}</Badge> : undefined}
+        subtitle="TFX malaka sertifikati — 5 yillik tsikl monitoringi"
       />
 
       <InfoBanner
-        maqsad="TFX litsenziyasi har 5 yilda yangilanadi — davr ichida 250 UKTT kredit ball to‘planishi va attestatsiyadan o‘tish talab etiladi."
-        ishlar="Muddati tugashiga 6 oy qolganda tizim avtomatik ogohlantiradi; muddati o‘tgan litsenziya bilan faoliyat yuritish cheklanadi."
-        manba="Tibbiyot va farmatsevtika xodimlarini baholash markazi (tibtoifa.uz), UKTT kredit moduli."
+        maqsad="Malaka toifasi sertifikati 5 yil amal qiladi — davr ichida UKTT kreditlarini to‘plash va attestatsiyadan qayta o‘tish talab etiladi. Toifa olish uchun staj: ikkinchi toifa — 3 yil, birinchi — 5 yil, oliy — 7 yil."
+        ishlar="Muddati tugashiga 6 oy qolganda tizim avtomatik ogohlantiradi. Eslatma: litsenziya faqat tibbiyot tashkilotlariga beriladi — shaxsiy shifokor darajasi malaka toifasi orqali tasdiqlanadi."
+        manba="Tibbiyot va farmatsevtika xodimlari malakasini baholash markazi (tibtoifa.uz), UKTT kredit moduli."
       />
 
-      <Card title="Litsenziyalar ro'yxati" extra={`${litsenziyalar.length} ta`}>
+      <div className="grid stat-grid" style={{ marginBottom: 18 }}>
+        <StatCard label="Malaka toifasi" value={tile(faol ? TOIFA_NOMLARI[faol.toifa] || faol.toifa : null)} icon="award" tone="violet" />
+        <StatCard label="Amal qilish muddati" value={tile(faol?.amal_qilish_muddati)} icon="calendar" tone="primary" />
+        <StatCard label="Qolgan kun" value={tile(faol ? Math.max(0, faolKunlar) : null)} caption={faol ? '5 yillik tsikl' : undefined} icon="clock" tone="teal" />
+        <StatCard label="Holat" value={tile(faol ? HOLAT_MATN[faol.holati] || faol.holati : null)} icon="shield" tone={faol ? TILE_TONE[faol.holati] || 'success' : 'success'} />
+      </div>
+
+      <Card title="Malaka sertifikatlari" extra={yuklanmoqda ? undefined : `${litsenziyalar.length} ta`}>
         {yuklanmoqda ? (
           <div style={{ padding: 28, textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>Yuklanmoqda...</div>
         ) : litsenziyalar.length === 0 ? (
           <div style={{ padding: 28, textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>
-            Litsenziya yozuvlari topilmadi.
+            Malaka sertifikati yozuvlari topilmadi.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -66,12 +88,10 @@ export default function LitsenziyaPage() {
               const foiz = tsiklFoizi(lic.berilgan_sana, lic.amal_qilish_muddati);
               return (
                 <div key={lic.id} style={{ border: '1px solid var(--line)', borderRadius: 14, padding: 18 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
-                    <div>
-                      <div className="mono" style={{ fontWeight: 700, color: 'var(--primary-dark)', fontSize: 15.5, marginBottom: 3 }}>
-                        {lic.tfx_raqami}
-                      </div>
-                      <div style={{ fontSize: 14.5, fontWeight: 600 }}>{lic.mutaxassislik}</div>
+                  {/* Sarlavha: TFX raqami + nishonchalar */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
+                    <div className="mono" style={{ fontWeight: 700, color: 'var(--primary-dark)', fontSize: 15.5 }}>
+                      {lic.tfx_raqami}
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       {lic.toifa && <Badge tone="violet">{TOIFA_NOMLARI[lic.toifa] || lic.toifa}</Badge>}
@@ -89,15 +109,28 @@ export default function LitsenziyaPage() {
                     value={foiz}
                     tone={lic.holati === 'amal_qilmoqda' ? 'var(--success)' : lic.holati === 'muddati_tugayapti' ? 'var(--warning)' : 'var(--danger)'}
                   />
-                  <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 8 }}>
-                    {kunlar >= 0 ? (
-                      <>Amal qilish muddatiga <b>{kunlar} kun</b> qoldi (5 yillik tsikl)</>
-                    ) : (
-                      <span style={{ color: 'var(--danger)' }}>
-                        Muddati <b>{Math.abs(kunlar)} kun</b> avval tugagan — yangilash uchun TFX markaziga murojaat qiling
-                      </span>
-                    )}
-                  </div>
+
+                  {/* Sertifikat tafsilotlari — dt/dd qatorlari */}
+                  <SummaryList
+                    className="summary-list--ichki"
+                    items={[
+                      { label: 'Mutaxassislik', value: lic.mutaxassislik },
+                      { label: 'Toifa', value: lic.toifa ? TOIFA_NOMLARI[lic.toifa] || lic.toifa : null },
+                      { label: 'Berilgan sana', value: lic.berilgan_sana, mono: true },
+                      { label: 'Amal qilish muddati', value: lic.amal_qilish_muddati, mono: true },
+                      {
+                        label: 'Qolgan',
+                        value:
+                          kunlar >= 0 ? (
+                            <><b>{kunlar} kun</b> (5 yillik tsikl)</>
+                          ) : (
+                            <span style={{ color: 'var(--danger)' }}>
+                              Muddati <b>{Math.abs(kunlar)} kun</b> avval tugagan — qayta attestatsiya uchun TFX baholash markaziga murojaat qiling
+                            </span>
+                          ),
+                      },
+                    ]}
+                  />
                 </div>
               );
             })}
